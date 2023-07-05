@@ -1,9 +1,3 @@
-/* eslint-disable prefer-spread */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable no-param-reassign */
-/* eslint-disable no-await-in-loop */
-/* eslint-disable no-restricted-syntax */
-/* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -28,6 +22,7 @@ import type {
 	WorkflowActivateMode,
 	WorkflowExecuteMode,
 	INodeType,
+	IWebhookData,
 } from 'n8n-workflow';
 import {
 	NodeHelpers,
@@ -166,7 +161,7 @@ export class ActiveWorkflowRunner implements IWebhookManager {
 		let activeWorkflowIds: string[] = [];
 		Logger.verbose('Call to remove all active workflows received (removeAll)');
 
-		activeWorkflowIds.push.apply(activeWorkflowIds, this.activeWorkflows.allActiveWorkflows());
+		activeWorkflowIds.push(...this.activeWorkflows.allActiveWorkflows());
 
 		const activeWorkflows = await this.getActiveWorkflows();
 		activeWorkflowIds = [...activeWorkflowIds, ...activeWorkflows];
@@ -191,9 +186,6 @@ export class ActiveWorkflowRunner implements IWebhookManager {
 		res: express.Response,
 	): Promise<IResponseCallbackData> {
 		Logger.debug(`Received webhook "${httpMethod}" for path "${path}"`);
-
-		// Reset request parameters
-		req.params = {};
 
 		// Remove trailing slash
 		if (path.endsWith('/')) {
@@ -243,6 +235,7 @@ export class ActiveWorkflowRunner implements IWebhookManager {
 					webhook = dynamicWebhook;
 				}
 			});
+
 			if (webhook === null) {
 				throw new ResponseHelper.NotFoundError(
 					webhookNotFoundErrorMessage(path, httpMethod),
@@ -292,9 +285,7 @@ export class ActiveWorkflowRunner implements IWebhookManager {
 			workflow,
 			workflow.getNode(webhook.node) as INode,
 			additionalData,
-		).filter((webhook) => {
-			return webhook.httpMethod === httpMethod && webhook.path === path;
-		})[0];
+		).find((w) => w.httpMethod === httpMethod && w.path === path) as IWebhookData;
 
 		// Get the node which has the webhook defined to know where to start from and to
 		// get additional data
@@ -474,11 +465,11 @@ export class ActiveWorkflowRunner implements IWebhookManager {
 
 				try {
 					await this.removeWorkflowWebhooks(workflow.id as string);
-				} catch (error) {
-					ErrorReporter.error(error);
+				} catch (error1) {
+					ErrorReporter.error(error1);
 					Logger.error(
 						// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-						`Could not remove webhooks of workflow "${workflow.id}" because of error: "${error.message}"`,
+						`Could not remove webhooks of workflow "${workflow.id}" because of error: "${error1.message}"`,
 					);
 				}
 
