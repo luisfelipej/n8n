@@ -2,7 +2,6 @@ import { Container } from 'typedi';
 import { readFile } from 'fs/promises';
 import type { Server } from 'http';
 import express from 'express';
-import bodyParser from 'body-parser';
 import compression from 'compression';
 import type { RedisOptions } from 'ioredis';
 
@@ -14,7 +13,7 @@ import * as Db from '@/Db';
 import type { IExternalHooksClass } from '@/Interfaces';
 import { ExternalHooks } from '@/ExternalHooks';
 import { send, sendErrorResponse, ServiceUnavailableError } from '@/ResponseHelper';
-import { corsMiddleware } from '@/middlewares';
+import { rawBody, jsonParser, corsMiddleware } from '@/middlewares';
 import { TestWebhooks } from '@/TestWebhooks';
 import { WaitingWebhooks } from '@/WaitingWebhooks';
 import { webhookRequestHandler } from '@/WebhookHelpers';
@@ -87,15 +86,9 @@ export abstract class AbstractServer {
 	private setupCommonMiddlewares() {
 		// Compress the response data
 		this.app.use(compression());
-	}
 
-	private setupBodyParserMiddleware() {
-		const payloadSizeMax = config.getEnv('endpoints.payloadSizeMax');
-		this.app.use(
-			bodyParser.json({
-				limit: `${payloadSizeMax}mb`,
-			}),
-		);
+		// Read incoming data into `rawBody`
+		this.app.use(rawBody);
 	}
 
 	private setupDevMiddlewares() {
@@ -181,7 +174,7 @@ export abstract class AbstractServer {
 		const activeWorkflowRunner = this.activeWorkflowRunner;
 
 		// Register all webhook requests
-		this.app.all(`/${endpoint}/:path`, webhookRequestHandler(activeWorkflowRunner));
+		this.app.all(`/${endpoint}/:path(*)`, webhookRequestHandler(activeWorkflowRunner));
 	}
 
 	// ----------------------------------------
@@ -203,7 +196,7 @@ export abstract class AbstractServer {
 		const testWebhooks = Container.get(TestWebhooks);
 
 		// Register all test webhook requests (for testing via the UI)
-		this.app.all(`/${endpoint}/:path`, webhookRequestHandler(testWebhooks));
+		this.app.all(`/${endpoint}/:path(*)`, webhookRequestHandler(testWebhooks));
 
 		// Removes a test webhook
 		// TODO UM: check if this needs validation with user management.
@@ -267,10 +260,12 @@ export abstract class AbstractServer {
 			this.setupTestWebhookEndpoint();
 		}
 
-		this.setupBodyParserMiddleware();
 		if (inDevelopment) {
 			this.setupDevMiddlewares();
 		}
+
+		// Setup JSON parsing middleware after the webhook handlers are setup
+		this.app.use(jsonParser);
 
 		await this.configure();
 
