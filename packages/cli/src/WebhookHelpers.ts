@@ -32,6 +32,7 @@ import type {
 	IDeferredPromise,
 	IExecuteData,
 	IExecuteResponsePromiseData,
+	IHttpRequestMethods,
 	IN8nHttpFullResponse,
 	INode,
 	IRunExecutionData,
@@ -70,7 +71,14 @@ import { getWorkflowOwner } from '@/UserManagement/UserManagementHelper';
 
 const pipeline = promisify(stream.pipeline);
 
-export const WEBHOOK_METHODS = ['DELETE', 'GET', 'HEAD', 'PATCH', 'POST', 'PUT'];
+export const WEBHOOK_METHODS: IHttpRequestMethods[] = [
+	'DELETE',
+	'GET',
+	'HEAD',
+	'PATCH',
+	'POST',
+	'PUT',
+];
 
 const xmlParser = new XmlParser({
 	async: true,

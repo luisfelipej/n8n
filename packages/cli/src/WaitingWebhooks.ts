@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable no-param-reassign */
-import type { INode, WebhookHttpMethod } from 'n8n-workflow';
+import type { INode, IHttpRequestMethods } from 'n8n-workflow';
 import { NodeHelpers, Workflow, LoggerProxy as Logger } from 'n8n-workflow';
 import { Service } from 'typedi';
 import type express from 'express';
@@ -24,7 +24,7 @@ export class WaitingWebhooks implements IWebhookManager {
 	constructor(private nodeTypes: NodeTypes, private executionRepository: ExecutionRepository) {}
 
 	async executeWebhook(
-		httpMethod: WebhookHttpMethod,
+		httpMethod: IHttpRequestMethods,
 		fullPath: string,
 		req: express.Request,
 		res: express.Response,
@@ -61,7 +61,7 @@ export class WaitingWebhooks implements IWebhookManager {
 	}
 
 	async startExecution(
-		httpMethod: WebhookHttpMethod,
+		httpMethod: IHttpRequestMethods,
 		path: string,
 		fullExecutionData: IExecutionResponse,
 		req: express.Request,
