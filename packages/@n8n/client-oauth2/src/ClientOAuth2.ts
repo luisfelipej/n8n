@@ -5,7 +5,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as qs from 'querystring';
 import { Agent } from 'https';
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import { getAuthError } from './utils';
 import type { ClientOAuth2TokenData } from './ClientOAuth2Token';
 import { ClientOAuth2Token } from './ClientOAuth2Token';
